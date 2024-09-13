@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horas por Proyecto</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <style>
+        body {
+            background-color: #001f3f;
+            font-family: 'Roboto', sans-serif;
+            font-size: 16px;
+            color: white;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            transition: background-color 0.5s ease;
+        }
+
+        h1.titulo-principal {
+            text-align: center;
+            font-size: 40px;
+            margin: 0;
+        }
+
+        .fecha-hora {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 14px;
+            color: #FFD700;
+        }
+
+        h2, h3 {
+            color: #ffffff;
+            margin: 10px 0;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .container-botones, #formulario {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background-color: #004080;
+            border: 3px solid #FFD700;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(255, 255, 255, 0.1);
+        }
+
+        #formulario {
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        button {
+            background-color: #00aaff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: #0099dd;
+            transform: scale(1.05);
+        }
+
+        .campo {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        select, input[type="file"] {
+            padding: 8px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            background-color: #002f5f;
+            color: white;
+        }
+
+        .main-layout {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .horas-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+            width: 30%;
+        }
+
+        .horas-item {
+            text-align: left;
+            background-color: #002f5f;
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid #FFD700;
+            transition: transform 0.3s ease;
+            font-size: 14px;
+        }
+
+        .horas-item:hover {
+            transform: scale(1.05);
+        }
+
+        .resultados-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .resultado-principal {
+            padding: 20px;
+            background-color: #003366;
+            border: 3px solid #FFD700;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            color: white;
+            text-align: center;
+            font-size: 40px;
+            font-weight: bold;
+            width: auto;
+        }
+
+        .estado-container {
+            padding: 15px;
+            background-color: #003366;
+            border: 2px solid #FFD700;
+            border-radius: 8px;
+            font-size: 24px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .estado {
+            font-weight: bold;
+        }
+
+        .estado-amarillo {
+            color: yellow;
+        }
+
+        .estado-verde {
+            color: green;
+        }
+
+        .estado-rojo {
+            color: red;
+        }
+
+        .resultado-negativo {
+            color: red;
+        }
+
+        .resultado-positivo {
+            color: green;
+        }
+
+        .carga-mensaje {
+            color: #FFD700;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="fecha-hora" id="fechaHora"></div>
+
+    <h1 class="titulo-principal">Horas por Proyecto</h1>
+
+    <div class="container">
+        <div class="container-botones">
+            <div class="titulo-archivo">
+                <h3>Horas Mensuales</h3>
+                <input type="file" id="fileInputMensuales" accept=".xlsx">
+                <span id="mensualesCarga" class="carga-mensaje"></span>
+            </div>
+
+            <div class="titulo-archivo">
+                <h3>Horas Acumuladas/Planificadas</h3>
+                <input type="file" id="fileInputAcumuladas" accept=".xlsx">
+                <span id="acumuladasCarga" class="carga-mensaje"></span>
+            </div>
+        </div>
+
+        <div id="formulario">
+            <div class="form-group">
+                <label for="clienteSelect" class="campo">Cliente:</label>
+                <select id="clienteSelect" class="campo">
+                    <option value="Todos">Todos</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="proyectoSelect" class="campo">Proyecto:</label>
+                <select id="proyectoSelect" class="campo">
+                    <option value="Todos">Todos</option>
+                </select>
+            </div>
+
+            <div class="botones-derecha">
+                <button id="botonCalculo" aria-label="Calcular horas para el proyecto" disabled>Hacer cálculo</button>
+                <button id="botonReiniciar" aria-label="Reiniciar los resultados">Reiniciar</button>
+            </div>
+        </div>
+
+        <div class="main-layout">
+            <div class="horas-container">
+                <div class="horas-item">
+                    <h2 id="resultadoHorasMensuales">Horas Mensuales: 0</h2>
+                </div>
+                <div class="horas-item">
+                    <h2 id="resultadoHorasAcumuladas">Horas Acumuladas: 0</h2>
+                </div>
+                <div class="horas-item">
+                    <h2 id="resultadoHorasPlanificadas">Horas Planificadas: 0</h2>
+                </div>
+            </div>
+
+            <div class="resultados-container">
+                <div id="resultadoProyecto" class="resultado-principal">Resultado del Proyecto: 0</div>
+                <div class="estado-container" id="resultadoEstadoProyecto">
+                    Estado del Proyecto: <span id="estadoProyecto" class="estado">Sin Estado definido</span>
+                </div>
+            </div>
+        </div>
+
+        <button id="botonExportar" aria-label="Exportar los resultados">Exportar Resultados</button>
+    </div>
+
+    <script>
+        let excelDataMensuales = [];
+        let excelDataAcumuladas = [];
+
+        function actualizarFechaHora() {
+            const fechaHoraElem = document.getElementById('fechaHora');
+            const ahora = new Date();
+            const dia = String(ahora.getDate()).padStart(2, '0');
+            const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+            const año = ahora.getFullYear();
+            const horas = String(ahora.getHours()).padStart(2, '0');
+            const minutos = String(ahora.getMinutes()).padStart(2, '0');
+            const fechaHoraTexto = `${dia}/${mes}/${año} ${horas}:${minutos}`;
+            fechaHoraElem.textContent = fechaHoraTexto;
+        }
+
+        setInterval(actualizarFechaHora, 1000);
+        actualizarFechaHora();
+
+        function leerArchivoExcel(inputElement, callback) {
+            const file = inputElement.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+                const excelData = XLSX.utils.sheet_to_json(sheet, {header: 1}).slice(1);
+                callback(excelData);
+            };
+
+            reader.onerror = function() {
+                alert("Hubo un error al leer el archivo. Por favor, intenta de nuevo.");
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        document.getElementById('fileInputMensuales').addEventListener('change', function(e) {
+            document.getElementById('mensualesCarga').textContent = "Cargando archivo...";
+            leerArchivoExcel(e.target, function(excelData) {
+                excelDataMensuales = excelData;
+                cargarClientesYProyectos();
+                document.getElementById('mensualesCarga').textContent = "Archivo cargado exitosamente.";
+            });
+        });
+
+        document.getElementById('fileInputAcumuladas').addEventListener('change', function(e) {
+            document.getElementById('acumuladasCarga').textContent = "Cargando archivo...";
+            leerArchivoExcel(e.target, function(excelData) {
+                excelDataAcumuladas = excelData;
+                cargarClientesYProyectos();
+                document.getElementById('acumuladasCarga').textContent = "Archivo cargado exitosamente.";
+            });
+        });
+
+        function cargarClientesYProyectos() {
+            if (excelDataMensuales.length === 0 || excelDataAcumuladas.length === 0) {
+                return;
+            }
+
+            verificarArchivosCargados();
+
+            const clienteSet = new Set();
+            excelDataMensuales.forEach(row => clienteSet.add(row[1]));
+            excelDataAcumuladas.forEach(row => clienteSet.add(row[0]));
+
+            actualizarSelect('clienteSelect', clienteSet);
+            cargarProyectos('Todos');
+        }
+
+        function verificarArchivosCargados() {
+            if (excelDataMensuales.length > 0 && excelDataAcumuladas.length > 0) {
+                document.getElementById('botonCalculo').disabled = false;
+            }
+        }
+
+        function cargarProyectos(clienteSeleccionado) {
+            const proyectoSet = new Set();
+
+            excelDataMensuales.forEach(row => {
+                if (clienteSeleccionado === 'Todos' || row[1] === clienteSeleccionado) {
+                    proyectoSet.add(row[6]);
+                }
+            });
+
+            excelDataAcumuladas.forEach(row => {
+                if (clienteSeleccionado === 'Todos' || row[0] === clienteSeleccionado) {
+                    proyectoSet.add(row[2]);
+                }
+            });
+
+            actualizarSelect('proyectoSelect', proyectoSet);
+        }
+
+        function actualizarSelect(selectId, valores) {
+            const select = document.getElementById(selectId);
+            const fragment = document.createDocumentFragment();
+            const defaultOption = document.createElement('option');
+            defaultOption.value = 'Todos';
+            defaultOption.text = 'Todos';
+            fragment.appendChild(defaultOption);
+
+            valores.forEach(valor => {
+                const option = document.createElement('option');
+                option.value = valor;
+                option.text = valor;
+                fragment.appendChild(option);
+            });
+
+            select.innerHTML = '';
+            select.appendChild(fragment);
+        }
+
+        document.getElementById('clienteSelect').addEventListener('change', function() {
+            cargarProyectos(this.value);
+        });
+
+        document.getElementById('botonCalculo').addEventListener('click', calcularHoras);
+
+        function calcularHoras() {
+            const clienteSeleccionado = document.getElementById('clienteSelect').value;
+            const proyectoSeleccionado = document.getElementById('proyectoSelect').value;
+
+            let sumaHorasMensuales = 0;
+            let sumaHorasAcumuladas = 0;
+            let sumaHorasPlanificadas = 0;
+            let estadoProyecto = "Sin Estado definido";
+
+            excelDataMensuales.forEach(row => {
+                const cliente = row[1];
+                const proyectoMensual = row[6];
+                const horasMensuales = isNaN(parseFloat(row[4])) ? 0 : parseFloat(row[4]);
+
+                if ((clienteSeleccionado === 'Todos' || cliente === clienteSeleccionado) &&
+                    (proyectoSeleccionado === 'Todos' || proyectoMensual === proyectoSeleccionado)) {
+                    sumaHorasMensuales += horasMensuales;
+                }
+            });
+
+            excelDataAcumuladas.forEach(row => {
+                const cliente = row[0];
+                const proyectoAcumulado = row[2];
+                const horasAcumuladas = isNaN(parseFloat(row[1])) ? 0 : parseFloat(row[1]);
+                const horasPlanificadas = isNaN(parseFloat(row[3])) ? 0 : parseFloat(row[3]);
+                const estado = row[4];
+
+                if ((clienteSeleccionado === 'Todos' || cliente === clienteSeleccionado) &&
+                    (proyectoSeleccionado === 'Todos' || proyectoAcumulado === proyectoSeleccionado)) {
+                    sumaHorasAcumuladas += horasAcumuladas;
+                    sumaHorasPlanificadas += horasPlanificadas;
+                    if (estado) {
+                        estadoProyecto = estado;
+                    }
+                }
+            });
+
+            const resultadoProyecto = sumaHorasPlanificadas - (sumaHorasMensuales + sumaHorasAcumuladas);
+
+            document.getElementById('resultadoHorasMensuales').textContent = `Horas Mensuales: ${sumaHorasMensuales}`;
+            document.getElementById('resultadoHorasAcumuladas').textContent = `Horas Acumuladas: ${sumaHorasAcumuladas}`;
+            document.getElementById('resultadoHorasPlanificadas').textContent = `Horas Planificadas: ${sumaHorasPlanificadas}`;
+            document.getElementById('resultadoProyecto').textContent = `Resultado del Proyecto: ${resultadoProyecto}`;
+            actualizarEstado(estadoProyecto);
+            actualizarColorResultado(resultadoProyecto);
+        }
+
+        function actualizarEstado(estadoProyecto) {
+            const estadoElemento = document.getElementById('estadoProyecto');
+            estadoElemento.textContent = estadoProyecto;
+
+            estadoElemento.classList.remove('estado-amarillo', 'estado-verde', 'estado-rojo');
+            if (estadoProyecto === "En Curso") {
+                estadoElemento.classList.add('estado-amarillo');
+            } else if (estadoProyecto === "Finalizado") {
+                estadoElemento.classList.add('estado-verde');
+            } else if (estadoProyecto === "Suspendido") {
+                estadoElemento.classList.add('estado-rojo');
+            }
+        }
+
+        function actualizarColorResultado(resultadoProyecto) {
+            const resultadoElemento = document.getElementById('resultadoProyecto');
+            resultadoElemento.classList.remove('resultado-negativo', 'resultado-positivo');
+            if (resultadoProyecto < 0) {
+                resultadoElemento.classList.add('resultado-negativo');
+            } else if (resultadoProyecto > 0) {
+                resultadoElemento.classList.add('resultado-positivo');
+            }
+        }
+
+        document.getElementById('botonExportar').addEventListener('click', exportarResultados);
+
+        function exportarResultados() {
+            const clienteSeleccionado = document.getElementById('clienteSelect').value;
+            const proyectoSeleccionado = document.getElementById('proyectoSelect').value;
+
+            const resultados = [
+                ['Cliente', clienteSeleccionado],
+                ['Proyecto', proyectoSeleccionado],
+                ['Resultado', 'Horas'],
+                ['Horas Mensuales', document.getElementById('resultadoHorasMensuales').textContent.split(': ')[1]],
+                ['Horas Acumuladas', document.getElementById('resultadoHorasAcumuladas').textContent.split(': ')[1]],
+                ['Horas Planificadas', document.getElementById('resultadoHorasPlanificadas').textContent.split(': ')[1]],
+                ['Resultado del Proyecto', document.getElementById('resultadoProyecto').textContent.split(': ')[1]],
+                ['Estado del Proyecto', document.getElementById('estadoProyecto').textContent]
+            ];
+
+            const datosFiltrados = [];
+            const horasPorConsultor = {};
+            const horasPorFecha = {};
+            let totalHoras = 0;
+
+            excelDataMensuales.forEach(row => {
+                const cliente = row[1];
+                const proyectoMensual = row[6];
+                const fecha = row[0];
+                const consultor = row[10];
+                const cantidadHoras = isNaN(parseFloat(row[4])) ? 0 : parseFloat(row[4]);
+
+                if ((clienteSeleccionado === 'Todos' || cliente === clienteSeleccionado) &&
+                    (proyectoSeleccionado === 'Todos' || proyectoMensual === proyectoSeleccionado)) {
+                    datosFiltrados.push([fecha, consultor, cantidadHoras]);
+
+                    // Sumar horas por consultor
+                    if (!horasPorConsultor[consultor]) {
+                        horasPorConsultor[consultor] = 0;
+                    }
+                    horasPorConsultor[consultor] += cantidadHoras;
+
+                    // Sumar horas por fecha
+                    if (!horasPorFecha[fecha]) {
+                        horasPorFecha[fecha] = 0;
+                    }
+                    horasPorFecha[fecha] += cantidadHoras;
+
+                    totalHoras += cantidadHoras;
+                }
+            });
+
+            // Agregar los datos filtrados a partir de la fila 10
+            const hojaExportada = [...resultados, [], ['Fecha', 'Consultor', 'Cantidad de Horas']];
+            datosFiltrados.forEach(fila => {
+                hojaExportada.push(fila);
+            });
+
+            // Consultores con horas sumadas
+            hojaExportada.push([]);
+            hojaExportada.push(['Consultor', 'Cantidad de Horas']);
+            for (const [consultor, horas] of Object.entries(horasPorConsultor)) {
+                hojaExportada.push([consultor, horas]);
+            }
+
+            // Fechas con horas sumadas
+            hojaExportada.push([]);
+            hojaExportada.push(['Fecha', 'Cantidad de Horas']);
+            for (const [fecha, horas] of Object.entries(horasPorFecha)) {
+                hojaExportada.push([fecha, horas]);
+            }
+
+            // Añadir el total de horas al final
+            hojaExportada.push([]);
+            hojaExportada.push(['Total de Horas', '', totalHoras]);
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(hojaExportada);
+            XLSX.utils.book_append_sheet(wb, ws, 'Resultados');
+            XLSX.writeFile(wb, `Resultados_Horas_Proyecto_${clienteSeleccionado}_${proyectoSeleccionado}.xlsx`);
+        }
+
+        document.getElementById('botonReiniciar').addEventListener('click', reiniciarConsulta);
+
+        function reiniciarConsulta() {
+            document.getElementById('clienteSelect').value = 'Todos';
+            document.getElementById('proyectoSelect').value = 'Todos';
+            document.getElementById('resultadoHorasMensuales').textContent = 'Horas Mensuales: 0';
+            document.getElementById('resultadoHorasAcumuladas').textContent = 'Horas Acumuladas: 0';
+            document.getElementById('resultadoHorasPlanificadas').textContent = 'Horas Planificadas: 0';
+            const estadoElemento = document.getElementById('estadoProyecto');
+            estadoElemento.textContent = 'Sin Estado definido';
+            estadoElemento.classList.remove('estado-amarillo', 'estado-verde', 'estado-rojo');
+            const resultadoElemento = document.getElementById('resultadoProyecto');
+            resultadoElemento.classList.remove('resultado-negativo', 'resultado-positivo');
+            document.body.style.backgroundColor = '#001f3f';
+        }
+    </script>
+</body>
+</html>
